@@ -1,5 +1,7 @@
 # Fcitx Status for Omarchy
 
+![Fcitx Status for Omarchy](preview.png)
+
 一个 Omarchy 4 状态栏插件，实时显示当前聚焦窗口的 Fcitx5 状态：
 
 - `中`：Fcitx5 已激活并正在使用 `rime`
