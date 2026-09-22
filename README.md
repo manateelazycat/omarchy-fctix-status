@@ -18,29 +18,44 @@
 
 `rime` 是 Fcitx5 输入法 ID；`rime_ice` 是 Rime 内部方案名，两者不是同一层级的名称。
 
-## 本地安装
-
-代码固定保存在：
-
-```text
-/home/andy/omarchy-fctix-status
-```
-
-把源码目录链接到 Omarchy 用户插件目录，然后启用到右侧：
+## 安装
 
 ```bash
-ln -s /home/andy/omarchy-fctix-status \
-  ~/.config/omarchy/plugins/io.github.manateelazycat.fcitx-status
-omarchy-shell shell rescanPlugins
-omarchy plugin enable io.github.manateelazycat.fcitx-status right
+omarchy plugin add https://github.com/manateelazycat/omarchy-fctix-status.git --enable --yes
 ```
 
-## 验证
+插件默认显示在状态栏右侧。
+
+## 更新
 
 ```bash
-omarchy plugin validate /home/andy/omarchy-fctix-status
-/home/andy/omarchy-fctix-status/tests/fcitx-statusctl-test.sh
-/home/andy/omarchy-fctix-status/scripts/fcitx-statusctl status
+omarchy plugin update io.github.manateelazycat.fcitx-status --yes
+```
+
+## 卸载
+
+```bash
+omarchy plugin remove io.github.manateelazycat.fcitx-status --yes
+```
+
+卸载插件不会修改或删除现有的 Fcitx5、Rime 或输入法配置。
+
+## 依赖
+
+- Omarchy 4（Quattro）及其 Quickshell 插件系统
+- 正在运行的 Fcitx5，当前输入法组包含 `keyboard-us` 和 `rime`
+- `fcitx5-remote`、`jq`、`dbus-monitor` 和 `busctl`
+- Omarchy 的 `omarchy-fcitx5.service`，或可用的 `fcitx5` 命令，作为 D-Bus
+  重启失败时的回退方式
+
+插件不会安装软件、请求提权或改写 Fcitx5/Rime 配置。
+
+## 开发与验证
+
+```bash
+omarchy plugin validate .
+./tests/fcitx-statusctl-test.sh
+./scripts/fcitx-statusctl status
 ```
 
 ## 许可证
