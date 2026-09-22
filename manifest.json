@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.manateelazycat.fcitx-status",
+  "name": "Fcitx Status",
+  "version": "1.0.0",
+  "author": "Andy Stewart",
+  "license": "MIT",
+  "description": "Show and control the focused window's Fcitx5 Chinese or English state.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Fcitx Status",
+    "description": "Show 中 or EN for the focused window and switch Fcitx5 from a right-click menu.",
+    "category": "Input",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

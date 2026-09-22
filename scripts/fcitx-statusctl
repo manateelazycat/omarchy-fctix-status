@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly FCITX_REMOTE="${FCITX_STATUS_FCITX_REMOTE:-fcitx5-remote}"
+readonly BUSCTL="${FCITX_STATUS_BUSCTL:-busctl}"
+readonly SYSTEMCTL="${FCITX_STATUS_SYSTEMCTL:-systemctl}"
+readonly FCITX5="${FCITX_STATUS_FCITX5:-fcitx5}"
+readonly FCITX_SERVICE="org.fcitx.Fcitx5"
+readonly FCITX_PATH="/controller"
+readonly FCITX_INTERFACE="org.fcitx.Fcitx.Controller1"
+readonly OMARCHY_FCITX_UNIT="omarchy-fcitx5.service"
+
+die() {
+  printf 'Fcitx Status: %s\n' "$*" >&2
+  exit 1
+}
+
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || die "找不到命令：$1"
+}
+
+fcitx_running() {
+  "$FCITX_REMOTE" --check >/dev/null 2>&1
+}
+
+fcitx_state() {
+  local value
+  value="$({ "$FCITX_REMOTE"; } 2>/dev/null || true)"
+  case "$value" in
+    0|1|2) printf '%s\n' "$value" ;;
+    *) printf '0\n' ;;
+  esac
+}
+
+current_input_method() {
+  "$FCITX_REMOTE" -n 2>/dev/null || true
+}
+
+status_command() {
+  require_command jq
+
+  local running=false ready=false mode=unknown state=0 input_method="" message
+
+  if command -v "$FCITX_REMOTE" >/dev/null 2>&1 && fcitx_running; then
+    running=true
+    state="$(fcitx_state)"
+    input_method="$(current_input_method)"
+
+    if [[ "$state" == 2 && "$input_method" == rime ]]; then
+      ready=true
+      mode=cn
+      message="中文 · Rime"
+    elif [[ "$state" == 1 || "$input_method" == keyboard-us ]]; then
+      ready=true
+      mode=en
+      message="英文 · keyboard-us"
+    elif [[ "$state" == 0 ]]; then
+      message="当前窗口没有可用的 Fcitx5 输入上下文"
+    else
+      message="当前输入法不是 rime 或 keyboard-us"
+    fi
+  elif ! command -v "$FCITX_REMOTE" >/dev/null 2>&1; then
+    message="未安装 fcitx5-remote"
+  else
+    message="Fcitx5 未运行"
+  fi
+
+  jq -cn \
+    --argjson ready "$ready" \
+    --arg mode "$mode" \
+    --argjson state "$state" \
+    --arg inputMethod "$input_method" \
+    --argjson fcitxRunning "$running" \
+    --arg message "$message" \
+    '{ready: $ready, mode: $mode, state: $state, inputMethod: $inputMethod,
+      fcitxRunning: $fcitxRunning, message: $message}'
+}
+
+set_mode_command() {
+  local mode="${1:-}"
+  [[ "$mode" == cn || "$mode" == en ]] || die "模式必须是 cn 或 en"
+
+  require_command "$FCITX_REMOTE"
+  fcitx_running || die "Fcitx5 未运行"
+
+  if [[ "$mode" == cn ]]; then
+    "$FCITX_REMOTE" -s rime >/dev/null
+    "$FCITX_REMOTE" -o >/dev/null
+  else
+    "$FCITX_REMOTE" -s keyboard-us >/dev/null
+    "$FCITX_REMOTE" -c >/dev/null
+  fi
+}
+
+restart_command() {
+  require_command "$BUSCTL"
+
+  if "$BUSCTL" --user call \
+      "$FCITX_SERVICE" \
+      "$FCITX_PATH" \
+      "$FCITX_INTERFACE" \
+      Restart >/dev/null 2>&1; then
+    return 0
+  fi
+
+  # If the D-Bus service is already down, recover through Omarchy's user unit.
+  if command -v "$SYSTEMCTL" >/dev/null 2>&1 \
+      && "$SYSTEMCTL" --user cat "$OMARCHY_FCITX_UNIT" >/dev/null 2>&1; then
+    "$SYSTEMCTL" --user restart "$OMARCHY_FCITX_UNIT" \
+      || die "无法重启 ${OMARCHY_FCITX_UNIT}"
+    return 0
+  fi
+
+  require_command "$FCITX5"
+  "$FCITX5" -rd || die "无法重启 Fcitx5"
+}
+
+usage() {
+  cat <<'USAGE'
+Usage: fcitx-statusctl COMMAND [ARG]
+
+Commands:
+  status             Print focused-window Fcitx5 status as JSON
+  set-mode cn|en     Select Chinese (Rime) or English (keyboard-us)
+  restart            Restart Fcitx5 and reload its configuration
+USAGE
+}
+
+case "${1:-}" in
+  status) status_command ;;
+  set-mode) set_mode_command "${2:-}" ;;
+  restart) restart_command ;;
+  -h|--help|help) usage ;;
+  *) usage >&2; exit 2 ;;
+esac
