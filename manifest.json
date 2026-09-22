@@ -4,7 +4,7 @@
   "name": "Fcitx Status",
   "version": "1.0.0",
   "author": "Andy Stewart",
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "description": "Show and control the focused window's Fcitx5 Chinese or English state.",
   "kinds": [
     "bar-widget"

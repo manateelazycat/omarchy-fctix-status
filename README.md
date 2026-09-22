@@ -40,3 +40,8 @@ omarchy plugin validate /home/andy/omarchy-fctix-status
 /home/andy/omarchy-fctix-status/tests/fcitx-statusctl-test.sh
 /home/andy/omarchy-fctix-status/scripts/fcitx-statusctl status
 ```
+
+## 许可证
+
+本项目依据 [GNU General Public License v3.0](LICENSE) 发布，SPDX 标识为
+`GPL-3.0-only`。
