@@ -1,56 +1,57 @@
 # Fcitx Status for Omarchy
 
+English | [简体中文](README.zh-CN.md)
+
 ![Fcitx Status for Omarchy](preview.png)
 
-一个 Omarchy 4 状态栏插件，实时显示当前聚焦窗口的 Fcitx5 状态：
+An Omarchy 4 bar plugin that shows the Fcitx5 state of the focused window in real time:
 
-- `中`：Fcitx5 已激活并正在使用 `rime`
-- `EN`：Fcitx5 未激活或正在使用 `keyboard-us`
-- `--`：Fcitx5 未运行、当前没有输入上下文，或状态不可识别
+- `中`: Fcitx5 is active and using `rime`.
+- `EN`: Fcitx5 is inactive or using `keyboard-us`.
+- `--`: Fcitx5 is not running, there is no current input context, or the state cannot be recognized.
 
-右键点击状态文字会显示三个操作：**中文**、**英文**、**重启**。
+Right-click the status text for three actions: **Chinese**, **English**, and **Restart**.
 
-## 操作语义
+## Actions
 
-- **中文**：为当前聚焦窗口选择 `rime`，然后激活 Fcitx5。
-- **英文**：为当前聚焦窗口选择 `keyboard-us`，然后停用输入法。
-- **重启**：调用 Fcitx5 Controller D-Bus 接口的 `Restart`；当服务已经退出时，回退到重启 Omarchy 的 `omarchy-fcitx5.service`。
+- **Chinese**: Select `rime` for the focused window, then activate Fcitx5.
+- **English**: Select `keyboard-us` for the focused window, then deactivate the input method.
+- **Restart**: Call `Restart` on the Fcitx5 Controller D-Bus interface. If the service has exited, fall back to restarting Omarchy's `omarchy-fcitx5.service`.
 
-`rime` 是 Fcitx5 输入法 ID；`rime_ice` 是 Rime 内部方案名，两者不是同一层级的名称。
+`rime` is an Fcitx5 input method ID; `rime_ice` is the name of a scheme inside Rime. They refer to different layers.
 
-## 安装
+## Install
 
 ```bash
 omarchy plugin add https://github.com/manateelazycat/omarchy-fctix-status.git --enable --yes
 ```
 
-插件默认显示在状态栏右侧。
+The plugin appears on the right side of the bar by default.
 
-## 更新
+## Update
 
 ```bash
 omarchy plugin update io.github.manateelazycat.fcitx-status --yes
 ```
 
-## 卸载
+## Remove
 
 ```bash
 omarchy plugin remove io.github.manateelazycat.fcitx-status --yes
 ```
 
-卸载插件不会修改或删除现有的 Fcitx5、Rime 或输入法配置。
+Removing the plugin does not change or remove existing Fcitx5, Rime, or input method settings.
 
-## 依赖
+## Requirements
 
-- Omarchy 4（Quattro）及其 Quickshell 插件系统
-- 正在运行的 Fcitx5，当前输入法组包含 `keyboard-us` 和 `rime`
-- `fcitx5-remote`、`jq`、`dbus-monitor` 和 `busctl`
-- Omarchy 的 `omarchy-fcitx5.service`，或可用的 `fcitx5` 命令，作为 D-Bus
-  重启失败时的回退方式
+- Omarchy 4 (Quattro) and its Quickshell plugin system
+- Running Fcitx5 with `keyboard-us` and `rime` in the current input method group
+- `fcitx5-remote`, `jq`, `dbus-monitor`, and `busctl`
+- Omarchy's `omarchy-fcitx5.service` or an available `fcitx5` command as a fallback when D-Bus restart fails
 
-插件不会安装软件、请求提权或改写 Fcitx5/Rime 配置。
+The plugin does not install software, request elevated privileges, or rewrite Fcitx5/Rime configuration.
 
-## 开发与验证
+## Development and validation
 
 ```bash
 omarchy plugin validate .
@@ -58,7 +59,6 @@ omarchy plugin validate .
 ./scripts/fcitx-statusctl status
 ```
 
-## 许可证
+## License
 
-本项目依据 [GNU General Public License v3.0](LICENSE) 发布，SPDX 标识为
-`GPL-3.0-only`。
+This project is distributed under the [GNU General Public License v3.0](LICENSE), with SPDX identifier `GPL-3.0-only`.
