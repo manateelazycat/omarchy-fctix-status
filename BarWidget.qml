@@ -197,13 +197,21 @@ BarWidget {
     function hide(): void { root.close() }
   }
 
-  WidgetButton {
+  Component {
+    id: inputModeIcon
+
+    FcitxIcon {
+      chinese: root.status.mode === "cn"
+      color: button.foreground
+    }
+  }
+
+  BarIconButton {
     id: button
     anchors.fill: parent
     bar: root.bar
     text: root.label
-    fontSize: Style.font.caption
-    horizontalMargin: 6
+    iconComponent: root.status.ready === true ? inputModeIcon : null
     active: root.status.ready === true && root.status.mode === "cn"
     useActiveColor: false
     tooltipText: root.status.ready === true

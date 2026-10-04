@@ -6,11 +6,11 @@ English | [简体中文](README.zh-CN.md)
 
 An Omarchy 4 bar plugin that shows the Fcitx5 state of the focused window in real time:
 
-- `中`: Fcitx5 is active and using `rime`.
-- `EN`: Fcitx5 is inactive or using `keyboard-us`.
+- Boxed `中` icon: Fcitx5 is active and using `rime`.
+- Boxed `En` icon: Fcitx5 is inactive or using `keyboard-us`.
 - `--`: Fcitx5 is not running, there is no current input context, or the state cannot be recognized.
 
-Right-click the status text for three actions: **Chinese**, **English**, and **Restart**.
+The vector icons follow the bar's theme color and icon size. Right-click the status icon for three actions: **Chinese**, **English**, and **Restart**.
 
 ## Actions
 
