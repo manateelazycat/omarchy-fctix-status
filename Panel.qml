@@ -1,9 +1,10 @@
+import "CompatUi" as ThemeUi
 // SPDX-License-Identifier: GPL-3.0-only
 
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 Panel {
@@ -22,9 +23,9 @@ Panel {
   property string errorText: ""
 
   readonly property var barIdentity: hostWidget || root
-  readonly property color foreground: root.bar ? root.bar.barForeground : Color.foreground
-  readonly property color urgent: root.bar ? root.bar.urgent : Color.urgent
-  readonly property string fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+  readonly property color foreground: root.bar ? root.bar.barForeground : Commons.Color.foreground
+  readonly property color urgent: root.bar ? root.bar.urgent : Commons.Color.urgent
+  readonly property string fontFamily: root.bar ? root.bar.fontFamily : Commons.Style.font.family
 
   function applyStatus(value) {
     if (value && typeof value === "object") root.status = value
@@ -128,21 +129,21 @@ Panel {
     property string iconText: ""
     property bool selected: false
     property bool hasCursor: false
-    property color foreground: Color.foreground
-    property string fontFamily: Style.font.family
+    property color foreground: Commons.Color.foreground
+    property string fontFamily: Commons.Style.font.family
 
     signal clicked()
     signal hovered(bool isHovered)
 
-    implicitHeight: Math.max(Style.space(34), itemRow.implicitHeight + Style.space(12))
-    radius: Style.cornerRadius
+    implicitHeight: Math.max(Commons.Style.space(34), itemRow.implicitHeight + Commons.Style.space(12))
+    radius: Commons.Style.cornerRadius
     opacity: enabled ? 1 : 0.45
     color: itemMouse.pressed
-      ? Style.pressedFillFor(menuItem.foreground, Color.accent)
+      ? Commons.Style.pressedFillFor(menuItem.foreground, Commons.Color.accent)
       : (menuItem.hasCursor || itemMouse.containsMouse)
-        ? Style.hoverFillFor(menuItem.foreground, menuItem.foreground)
+        ? Commons.Style.hoverFillFor(menuItem.foreground, menuItem.foreground)
         : menuItem.selected
-          ? Style.selectedFillFor(menuItem.foreground, Color.accent)
+          ? Commons.Style.selectedFillFor(menuItem.foreground, Commons.Color.accent)
           : "transparent"
 
     Behavior on color { ColorAnimation { duration: 120 } }
@@ -152,16 +153,16 @@ Panel {
       anchors.left: parent.left
       anchors.right: parent.right
       anchors.verticalCenter: parent.verticalCenter
-      anchors.leftMargin: Style.space(10)
-      anchors.rightMargin: Style.space(10)
-      spacing: Style.space(8)
+      anchors.leftMargin: Commons.Style.space(10)
+      anchors.rightMargin: Commons.Style.space(10)
+      spacing: Commons.Style.space(8)
 
       Text {
-        width: Style.space(18)
+        width: Commons.Style.space(18)
         text: menuItem.iconText
         color: menuItem.foreground
         font.family: menuItem.fontFamily
-        font.pixelSize: Style.font.body
+        font.pixelSize: Commons.Style.font.body
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
       }
@@ -170,7 +171,7 @@ Panel {
         text: menuItem.text
         color: menuItem.foreground
         font.family: menuItem.fontFamily
-        font.pixelSize: Style.font.body
+        font.pixelSize: Commons.Style.font.body
         verticalAlignment: Text.AlignVCenter
       }
     }
@@ -187,17 +188,17 @@ Panel {
     }
   }
 
-  KeyboardPanel {
+  ThemeUi.KeyboardPanel {
     id: panel
     anchorItem: root.anchorItem
     owner: root.barIdentity
     bar: root.bar
     open: root.opened
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(180))
+    contentWidth: panel.fittedContentWidth(Commons.Style.space(180))
     contentHeight: panel.fittedContentHeight(content.implicitHeight)
 
-    PanelKeyCatcher {
+    ThemeUi.PanelKeyCatcher {
       id: keyCatcher
       anchors.fill: parent
       blocked: root.actionBusy
@@ -216,7 +217,7 @@ Panel {
       Column {
         id: content
         width: parent.width
-        spacing: Style.space(4)
+        spacing: Commons.Style.space(4)
 
         MenuItem {
           width: parent.width
@@ -262,7 +263,7 @@ Panel {
           text: root.errorText
           color: root.urgent
           font.family: root.fontFamily
-          font.pixelSize: Style.font.caption
+          font.pixelSize: Commons.Style.font.caption
           wrapMode: Text.WordWrap
         }
       }

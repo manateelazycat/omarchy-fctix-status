@@ -1,10 +1,11 @@
+import "CompatUi" as ThemeUi
 // SPDX-License-Identifier: GPL-3.0-only
 
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
-import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 BarWidget {
@@ -206,7 +207,7 @@ BarWidget {
     }
   }
 
-  BarIconButton {
+  ThemeUi.BarIconButton {
     id: button
     anchors.fill: parent
     bar: root.bar
