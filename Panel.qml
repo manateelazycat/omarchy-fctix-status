@@ -2,12 +2,13 @@ import "CompatUi" as ThemeUi
 // SPDX-License-Identifier: GPL-3.0-only
 
 import QtQuick
+import QtQuick.Controls as Controls
 import Quickshell
 import Quickshell.Io
 import qs.Commons as Commons
-import qs.Ui
+import qs.Ui as ShellUi
 
-Panel {
+ThemeUi.Panel {
   id: root
   moduleName: "io.github.manateelazycat.fcitx-status"
   ipcTarget: "io.github.manateelazycat.fcitx-status"
@@ -18,9 +19,22 @@ Panel {
   property string controlPath: ""
   property var status: ({ ready: false, mode: "unknown" })
   property int focusIndex: 0
-  property string pendingAction: ""
+  property var pendingCommand: []
   property bool actionBusy: false
   property string errorText: ""
+  property bool choosingRimeSchema: false
+  property var rimeSchemas: []
+  property string currentRimeSchema: ""
+  property string rimeSchemasError: ""
+
+  readonly property var filteredRimeSchemas: {
+    var query = rimeSchemaSearch.text.trim().toLowerCase()
+    if (query === "") return root.rimeSchemas
+    return root.rimeSchemas.filter(function(schema) {
+      return schema.name.toLowerCase().includes(query)
+        || schema.id.toLowerCase().includes(query)
+    })
+  }
 
   readonly property var barIdentity: hostWidget || root
   readonly property color foreground: root.bar ? root.bar.barForeground : Commons.Color.foreground
@@ -32,6 +46,7 @@ Panel {
   }
 
   function open() {
+    root.choosingRimeSchema = false
     root.controller.show()
     root.focusIndex = root.status.mode === "en" ? 1 : 0
     Qt.callLater(function() { keyCatcher.forceActiveFocus() })
@@ -56,18 +71,40 @@ Panel {
   }
 
   function moveFocus(delta) {
-    root.focusIndex = (root.focusIndex + (delta > 0 ? 1 : -1) + 3) % 3
+    root.focusIndex = (root.focusIndex + (delta > 0 ? 1 : -1) + menu.count) % menu.count
   }
 
   function activateFocused() {
-    if (root.focusIndex === 0) root.queueAction("cn")
-    else if (root.focusIndex === 1) root.queueAction("en")
-    else root.queueAction("restart")
+    menu.itemAt(root.focusIndex).clicked()
   }
 
-  function queueAction(action) {
+  function showRimeSchemas() {
     if (root.actionBusy || root.controlPath === "") return
-    root.pendingAction = action
+    root.rimeSchemas = []
+    root.rimeSchemasError = ""
+    rimeSchemaSearch.clear()
+    root.choosingRimeSchema = true
+    picker.forceActiveFocus()
+    if (!rimeSchemasProc.running) {
+      rimeSchemasProc.command = [root.controlPath, "list-rime-schemas"]
+      rimeSchemasProc.running = true
+    }
+  }
+
+  function showMenu() {
+    root.choosingRimeSchema = false
+    root.focusIndex = 2
+    keyCatcher.forceActiveFocus()
+  }
+
+  function selectRimeSchema(index) {
+    var schema = root.filteredRimeSchemas[index]
+    if (schema) root.queueAction(["set-rime-schema", schema.id])
+  }
+
+  function queueAction(args) {
+    if (root.actionBusy || root.controlPath === "") return
+    root.pendingCommand = [root.controlPath].concat(args)
     root.actionBusy = true
     root.errorText = ""
     // KeyboardPanel owns keyboard focus while open. Release it before invoking
@@ -76,20 +113,14 @@ Panel {
     actionDelay.restart()
   }
 
-  function runPendingAction() {
-    var action = root.pendingAction
-    root.pendingAction = ""
-    if (action === "cn" || action === "en")
-      actionProc.command = [root.controlPath, "set-mode", action]
-    else
-      actionProc.command = [root.controlPath, "restart"]
-    actionProc.running = true
-  }
-
   Timer {
     id: actionDelay
     interval: 160
-    onTriggered: root.runPendingAction()
+    onTriggered: {
+      actionProc.command = root.pendingCommand
+      root.pendingCommand = []
+      actionProc.running = true
+    }
   }
 
   Timer {
@@ -119,9 +150,31 @@ Panel {
     }
   }
 
+  Process {
+    id: rimeSchemasProc
+
+    stdout: StdioCollector { id: rimeSchemasOutput }
+    stderr: StdioCollector { id: rimeSchemasStderr }
+
+    onExited: function(exitCode) {
+      if (exitCode === 0) {
+        try {
+          var result = JSON.parse(rimeSchemasOutput.text)
+          root.currentRimeSchema = result.current
+          root.rimeSchemas = result.schemas
+        } catch (error) {
+          root.rimeSchemasError = "无法读取 Rime 输入方案"
+        }
+      } else {
+        root.rimeSchemasError = String(rimeSchemasStderr.text || "无法读取 Rime 输入方案").trim()
+      }
+      if (root.opened && root.choosingRimeSchema) rimeSchemaSearch.forceActiveFocus()
+    }
+  }
+
   // A deliberately flat menu row. The shared Button component draws theme
   // borders for selected, hovered, and keyboard-cursor states; these rows use
-  // background fills only so none of the three menu items ever gets an outline.
+  // background fills for all interaction states.
   component MenuItem: Rectangle {
     id: menuItem
 
@@ -168,11 +221,13 @@ Panel {
       }
 
       Text {
+        width: Math.max(0, itemRow.width - Commons.Style.space(26))
         text: menuItem.text
         color: menuItem.foreground
         font.family: menuItem.fontFamily
         font.pixelSize: Commons.Style.font.body
         verticalAlignment: Text.AlignVCenter
+        elide: Text.ElideRight
       }
     }
 
@@ -195,12 +250,13 @@ Panel {
     bar: root.bar
     open: root.opened
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Commons.Style.space(180))
-    contentHeight: panel.fittedContentHeight(content.implicitHeight)
+    contentWidth: panel.fittedContentWidth(Commons.Style.space(root.choosingRimeSchema ? 400 : 180))
+    contentHeight: panel.fittedContentHeight(root.choosingRimeSchema ? picker.implicitHeight : content.implicitHeight)
 
     ThemeUi.PanelKeyCatcher {
       id: keyCatcher
       anchors.fill: parent
+      visible: !root.choosingRimeSchema
       blocked: root.actionBusy
       onMoveRequested: function(dx, dy) {
         if (dy !== 0) root.moveFocus(dy)
@@ -209,9 +265,9 @@ Panel {
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
       onTextKey: function(text) {
-        if (text === "c" || text === "C") root.queueAction("cn")
-        else if (text === "e" || text === "E") root.queueAction("en")
-        else if (text === "r" || text === "R") root.queueAction("restart")
+        if (text === "c" || text === "C") root.queueAction(["set-mode", "cn"])
+        else if (text === "e" || text === "E") root.queueAction(["set-mode", "en"])
+        else if (text === "r" || text === "R") root.queueAction(["restart"])
       }
 
       Column {
@@ -219,42 +275,30 @@ Panel {
         width: parent.width
         spacing: Commons.Style.space(4)
 
-        MenuItem {
-          width: parent.width
-          text: "中文"
-          iconText: root.status.mode === "cn" ? "✓" : ""
-          selected: root.status.mode === "cn"
-          hasCursor: root.focusIndex === 0
-          enabled: !root.actionBusy
-          foreground: root.foreground
-          fontFamily: root.fontFamily
-          onClicked: root.queueAction("cn")
-          onHovered: function(hovered) { if (hovered) root.focusIndex = 0 }
-        }
+        Repeater {
+          id: menu
+          model: [
+            { text: "中文", mode: "cn", args: ["set-mode", "cn"] },
+            { text: "英文", mode: "en", args: ["set-mode", "en"] },
+            { text: "切换输入法", icon: "⇄" },
+            { text: "重启", icon: "↻", args: ["restart"] }
+          ]
 
-        MenuItem {
-          width: parent.width
-          text: "英文"
-          iconText: root.status.mode === "en" ? "✓" : ""
-          selected: root.status.mode === "en"
-          hasCursor: root.focusIndex === 1
-          enabled: !root.actionBusy
-          foreground: root.foreground
-          fontFamily: root.fontFamily
-          onClicked: root.queueAction("en")
-          onHovered: function(hovered) { if (hovered) root.focusIndex = 1 }
-        }
+          MenuItem {
+            required property var modelData
+            required property int index
 
-        MenuItem {
-          width: parent.width
-          text: "重启"
-          iconText: "↻"
-          hasCursor: root.focusIndex === 2
-          enabled: !root.actionBusy
-          foreground: root.foreground
-          fontFamily: root.fontFamily
-          onClicked: root.queueAction("restart")
-          onHovered: function(hovered) { if (hovered) root.focusIndex = 2 }
+            width: content.width
+            text: modelData.text
+            iconText: selected ? "✓" : (modelData.icon || "")
+            selected: root.status.mode === modelData.mode
+            hasCursor: root.focusIndex === index
+            enabled: !root.actionBusy
+            foreground: root.foreground
+            fontFamily: root.fontFamily
+            onClicked: modelData.args ? root.queueAction(modelData.args) : root.showRimeSchemas()
+            onHovered: function(hovered) { if (hovered) root.focusIndex = index }
+          }
         }
 
         Text {
@@ -265,6 +309,87 @@ Panel {
           font.family: root.fontFamily
           font.pixelSize: Commons.Style.font.caption
           wrapMode: Text.WordWrap
+        }
+      }
+    }
+
+    Item {
+      id: picker
+      anchors.fill: parent
+      visible: root.choosingRimeSchema
+      implicitHeight: pickerHeader.implicitHeight
+        + Math.min(rimeSchemaList.count, 8) * Commons.Style.space(38)
+      Keys.onEscapePressed: root.showMenu()
+
+      Column {
+        id: pickerHeader
+        width: parent.width
+        spacing: Commons.Style.space(4)
+
+        MenuItem {
+          width: parent.width
+          text: "切换输入方案"
+          iconText: "‹"
+          foreground: root.foreground
+          fontFamily: root.fontFamily
+          onClicked: root.showMenu()
+        }
+
+        ShellUi.TextField {
+          id: rimeSchemaSearch
+          width: parent.width
+          placeholderText: "搜索输入方案"
+          foreground: root.foreground
+          accent: Commons.Color.accent
+          font.family: root.fontFamily
+          readOnly: rimeSchemasProc.running
+          selectByMouse: true
+          Keys.onUpPressed: rimeSchemaList.decrementCurrentIndex()
+          Keys.onDownPressed: rimeSchemaList.incrementCurrentIndex()
+          onAccepted: root.selectRimeSchema(rimeSchemaList.currentIndex)
+        }
+
+        Text {
+          visible: rimeSchemaList.count === 0
+          width: parent.width
+          text: rimeSchemasProc.running ? "正在读取输入方案…"
+            : root.rimeSchemasError || (root.rimeSchemas.length ? "没有匹配的输入方案" : "没有可用的输入方案")
+          color: root.rimeSchemasError === "" ? root.foreground : root.urgent
+          font.family: root.fontFamily
+          font.pixelSize: Commons.Style.font.caption
+          wrapMode: Text.Wrap
+        }
+      }
+
+      ListView {
+        id: rimeSchemaList
+        anchors.top: pickerHeader.bottom
+        anchors.topMargin: count > 0 ? Commons.Style.space(4) : 0
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        clip: true
+        spacing: Commons.Style.space(4)
+        model: root.filteredRimeSchemas
+        onModelChanged: {
+          currentIndex = count > 0 ? 0 : -1
+          positionViewAtBeginning()
+        }
+        Controls.ScrollBar.vertical: Controls.ScrollBar {}
+
+        delegate: MenuItem {
+          required property var modelData
+          required property int index
+
+          width: rimeSchemaList.width - Commons.Style.space(8)
+          text: modelData.name
+          iconText: selected ? "✓" : ""
+          selected: modelData.id === root.currentRimeSchema
+          hasCursor: ListView.isCurrentItem
+          enabled: !root.actionBusy
+          foreground: root.foreground
+          fontFamily: root.fontFamily
+          onClicked: root.selectRimeSchema(index)
         }
       }
     }

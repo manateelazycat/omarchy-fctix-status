@@ -10,12 +10,13 @@ An Omarchy 4 bar plugin that shows the Fcitx5 state of the focused window in rea
 - Boxed `En` icon: Fcitx5 is inactive or using `keyboard-us`.
 - `--`: Fcitx5 is not running, there is no current input context, or the state cannot be recognized.
 
-The vector icons follow the bar's theme color and icon size. Right-click the status icon for three actions: **Chinese**, **English**, and **Restart**.
+The vector icons follow the bar's theme color and icon size. The right-click menu offers **Chinese**, **English**, **Switch input method**, and **Restart**.
 
 ## Actions
 
 - **Chinese**: Select `rime` for the focused window, then activate Fcitx5.
 - **English**: Select `keyboard-us` for the focused window, then deactivate the input method.
+- Choose **Switch input method** to open a searchable list of configured Rime schemas, such as Rime Ice. The current schema appears first with a check mark. Selecting a schema switches the focused window to Rime and applies that schema.
 - **Restart**: Call `Restart` on the Fcitx5 Controller D-Bus interface. If the service has exited, fall back to restarting Omarchy's `omarchy-fcitx5.service`.
 
 `rime` is an Fcitx5 input method ID; `rime_ice` is the name of a scheme inside Rime. They refer to different layers.
@@ -47,9 +48,10 @@ Removing the plugin does not change or remove existing Fcitx5, Rime, or input me
 - Omarchy 4 (Quattro) and its Quickshell plugin system
 - Running Fcitx5 with `keyboard-us` and `rime` in the current input method group
 - `fcitx5-remote`, `jq`, `dbus-monitor`, and `busctl`
+- Python 3 and PyYAML (`python-yaml` on Omarchy) for reading Rime schema names
 - Omarchy's `omarchy-fcitx5.service` or an available `fcitx5` command as a fallback when D-Bus restart fails
 
-The plugin does not install software, request elevated privileges, or rewrite Fcitx5/Rime configuration.
+The plugin does not install software or request elevated privileges.
 
 ## Development and validation
 

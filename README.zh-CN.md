@@ -10,12 +10,13 @@
 - 方框 `En` 图标：Fcitx5 未激活或正在使用 `keyboard-us`
 - `--`：Fcitx5 未运行、当前没有输入上下文，或状态不可识别
 
-矢量图标跟随任务栏的主题颜色和图标尺寸。右键点击状态图标会显示三个操作：**中文**、**英文**、**重启**。
+矢量图标跟随任务栏的主题颜色和图标尺寸。右键菜单提供 **中文**、**英文**、**切换输入法** 和 **重启**。
 
 ## 操作语义
 
 - **中文**：为当前聚焦窗口选择 `rime`，然后激活 Fcitx5。
 - **英文**：为当前聚焦窗口选择 `keyboard-us`，然后停用输入法。
+- 选择 **切换输入法** 会打开可搜索的 Rime 输入方案列表，例如雾凇拼音。当前方案置顶并打勾。选择后，当前窗口会切换到 Rime 并使用所选方案。
 - **重启**：调用 Fcitx5 Controller D-Bus 接口的 `Restart`；当服务已经退出时，回退到重启 Omarchy 的 `omarchy-fcitx5.service`。
 
 `rime` 是 Fcitx5 输入法 ID；`rime_ice` 是 Rime 内部方案名，两者不是同一层级的名称。
@@ -47,10 +48,11 @@ omarchy plugin remove io.github.manateelazycat.fcitx-status --yes
 - Omarchy 4（Quattro）及其 Quickshell 插件系统
 - 正在运行的 Fcitx5，当前输入法组包含 `keyboard-us` 和 `rime`
 - `fcitx5-remote`、`jq`、`dbus-monitor` 和 `busctl`
+- Python 3 和 PyYAML（Omarchy 中的软件包名为 `python-yaml`），用于读取 Rime 方案名称
 - Omarchy 的 `omarchy-fcitx5.service`，或可用的 `fcitx5` 命令，作为 D-Bus
   重启失败时的回退方式
 
-插件不会安装软件、请求提权或改写 Fcitx5/Rime 配置。
+插件不会安装软件或请求提权。
 
 ## 开发与验证
 

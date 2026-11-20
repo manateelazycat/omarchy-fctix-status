@@ -10,6 +10,8 @@ readonly FCITX5="${FCITX_STATUS_FCITX5:-fcitx5}"
 readonly FCITX_SERVICE="org.fcitx.Fcitx5"
 readonly FCITX_PATH="/controller"
 readonly FCITX_INTERFACE="org.fcitx.Fcitx.Controller1"
+readonly RIME_PATH="/rime"
+readonly RIME_INTERFACE="org.fcitx.Fcitx.Rime1"
 readonly OMARCHY_FCITX_UNIT="omarchy-fcitx5.service"
 
 die() {
@@ -94,6 +96,53 @@ set_mode_command() {
   fi
 }
 
+rime_call() {
+  "$BUSCTL" --user --json=short call "$FCITX_SERVICE" "$RIME_PATH" "$RIME_INTERFACE" "$@"
+}
+
+require_rime_commands() {
+  require_command "$BUSCTL"
+  require_command jq
+  require_command "$FCITX_REMOTE"
+  fcitx_running || die "Fcitx5 未运行"
+}
+
+rime_schemas() {
+  rime_call ListAllSchemas | jq -ce '.data[0] | select(type == "array")'
+}
+
+rime_current_schema() {
+  rime_call GetCurrentSchema | jq -er '.data[0] | select(type == "string")'
+}
+
+list_rime_schemas_command() {
+  require_rime_commands
+  require_command python3
+
+  local schemas current
+  schemas="$(rime_schemas 2>/dev/null)" || die "无法读取 Rime 输入方案，请确认 Fcitx5 的 Rime 插件已启用"
+  current="$(rime_current_schema 2>/dev/null)" || die "无法读取当前 Rime 输入方案"
+  python3 "$(dirname -- "${BASH_SOURCE[0]}")/rime-schema-names.py" "$current" <<<"$schemas"
+}
+
+set_rime_schema_command() {
+  local schema="${1:-}"
+  [[ -n "$schema" ]] || die "请选择 Rime 输入方案"
+  require_rime_commands
+
+  local schemas current
+  schemas="$(rime_schemas 2>/dev/null)" || die "无法读取 Rime 输入方案，请确认 Fcitx5 的 Rime 插件已启用"
+  jq -e --arg schema "$schema" 'index($schema) != null' >/dev/null <<<"$schemas" \
+    || die "Rime 输入方案不可用：$schema"
+  [[ "$(fcitx_state)" != 0 ]] || die "当前窗口没有可用的 Fcitx5 输入上下文"
+
+  set_mode_command cn
+  [[ "$(current_input_method)" == rime ]] || die "无法激活 Rime"
+  rime_call SetSchema s "$schema" >/dev/null || die "无法切换 Rime 输入方案：$schema"
+  current="$(rime_current_schema)" || die "无法确认当前 Rime 输入方案"
+  [[ "$current" == "$schema" ]] || die "无法切换 Rime 输入方案：$schema"
+}
+
 restart_command() {
   require_command "$BUSCTL"
 
@@ -122,15 +171,19 @@ usage() {
 Usage: fcitx-statusctl COMMAND [ARG]
 
 Commands:
-  status             Print focused-window Fcitx5 status as JSON
-  set-mode cn|en     Select Chinese (Rime) or English (keyboard-us)
-  restart            Restart Fcitx5 and reload its configuration
+  status                 Print focused-window Fcitx5 status as JSON
+  set-mode cn|en         Select Chinese (Rime) or English (keyboard-us)
+  list-rime-schemas      Print configured Rime schemas with the current one first
+  set-rime-schema ID     Activate Rime and select a configured schema
+  restart                Restart Fcitx5 and reload its configuration
 USAGE
 }
 
 case "${1:-}" in
   status) status_command ;;
   set-mode) set_mode_command "${2:-}" ;;
+  list-rime-schemas) list_rime_schemas_command ;;
+  set-rime-schema) set_rime_schema_command "${2:-}" ;;
   restart) restart_command ;;
   -h|--help|help) usage ;;
   *) usage >&2; exit 2 ;;
