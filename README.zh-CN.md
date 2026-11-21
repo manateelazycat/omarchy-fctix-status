@@ -23,11 +23,15 @@
 
 ## 安装
 
+启用插件前，先配置 Fcitx5 的 Rime 集成。在 Omarchy 上运行 `sudo pacman -S --needed fcitx5-rime` 安装集成，然后在 Fcitx5 配置中将 **键盘 - 英语（美国）** 和 **中州韵** 加入当前输入法组，并配置要在选择器中显示的 Rime 输入方案。
+
 ```bash
 omarchy plugin add https://github.com/manateelazycat/omarchy-fctix-status.git --enable --yes
 ```
 
 插件默认显示在状态栏右侧。
+
+安装 `python-yaml` 后，选择器可以显示「雾凇拼音」等方案名称。未安装时，仍可按 `rime_ice` 等方案 ID 搜索和切换。
 
 ## 更新
 
@@ -46,15 +50,17 @@ omarchy plugin remove io.github.manateelazycat.fcitx-status --yes
 ## 依赖
 
 - Omarchy 4（Quattro）及其 Quickshell 插件系统
-- 正在运行的 Fcitx5，当前输入法组包含 `keyboard-us` 和 `rime`
+- 正在运行的 Fcitx5，已安装 `fcitx5-rime`，且当前输入法组包含 `keyboard-us` 和 `rime`
 - `fcitx5-remote`、`jq`、`dbus-monitor` 和 `busctl`
-- Python 3 和 PyYAML（Omarchy 中的软件包名为 `python-yaml`），用于读取 Rime 方案名称
+- Python 3 用于列出 Rime 输入方案。PyYAML（Omarchy 中的软件包名为 `python-yaml`）为可选依赖，用于读取方案名称
 - Omarchy 的 `omarchy-fcitx5.service`，或可用的 `fcitx5` 命令，作为 D-Bus
   重启失败时的回退方式
 
 插件不会安装软件或请求提权。
 
 ## 开发与验证
+
+安装 `python-yaml` 后，控制脚本的测试会同时验证方案名称和回退到方案 ID 的行为。
 
 ```bash
 omarchy plugin validate .

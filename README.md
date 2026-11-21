@@ -23,11 +23,15 @@ The vector icons follow the bar's theme color and icon size. The right-click men
 
 ## Install
 
+Set up Rime in Fcitx5 before enabling the plugin. On Omarchy, install the integration with `sudo pacman -S --needed fcitx5-rime`, then add **Keyboard - English (US)** and **Rime** to the active input method group in Fcitx5 Configuration. Configure the Rime schemas you want to see in the picker.
+
 ```bash
 omarchy plugin add https://github.com/manateelazycat/omarchy-fctix-status.git --enable --yes
 ```
 
 The plugin appears on the right side of the bar by default.
+
+Install `python-yaml` if you want the picker to show display names such as 雾凇拼音. Without it, you can still search for and switch schemas by ID, such as `rime_ice`.
 
 ## Update
 
@@ -46,14 +50,16 @@ Removing the plugin does not change or remove existing Fcitx5, Rime, or input me
 ## Requirements
 
 - Omarchy 4 (Quattro) and its Quickshell plugin system
-- Running Fcitx5 with `keyboard-us` and `rime` in the current input method group
+- Running Fcitx5 with the `fcitx5-rime` add-on and `keyboard-us` and `rime` in the current input method group
 - `fcitx5-remote`, `jq`, `dbus-monitor`, and `busctl`
-- Python 3 and PyYAML (`python-yaml` on Omarchy) for reading Rime schema names
+- Python 3 for listing Rime schemas, with optional PyYAML (`python-yaml` on Omarchy) for display names
 - Omarchy's `omarchy-fcitx5.service` or an available `fcitx5` command as a fallback when D-Bus restart fails
 
 The plugin does not install software or request elevated privileges.
 
 ## Development and validation
+
+Install `python-yaml` to run the controller tests for both display names and the ID fallback.
 
 ```bash
 omarchy plugin validate .

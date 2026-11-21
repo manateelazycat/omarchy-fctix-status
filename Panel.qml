@@ -28,7 +28,7 @@ ThemeUi.Panel {
   property string rimeSchemasError: ""
 
   readonly property var filteredRimeSchemas: {
-    var query = rimeSchemaSearch.text.trim().toLowerCase()
+    var query = searchLoader.item ? searchLoader.item.text.trim().toLowerCase() : ""
     if (query === "") return root.rimeSchemas
     return root.rimeSchemas.filter(function(schema) {
       return schema.name.toLowerCase().includes(query)
@@ -82,7 +82,6 @@ ThemeUi.Panel {
     if (root.actionBusy || root.controlPath === "") return
     root.rimeSchemas = []
     root.rimeSchemasError = ""
-    rimeSchemaSearch.clear()
     root.choosingRimeSchema = true
     picker.forceActiveFocus()
     if (!rimeSchemasProc.running) {
@@ -168,7 +167,7 @@ ThemeUi.Panel {
       } else {
         root.rimeSchemasError = String(rimeSchemasStderr.text || "无法读取 Rime 输入方案").trim()
       }
-      if (root.opened && root.choosingRimeSchema) rimeSchemaSearch.forceActiveFocus()
+      if (searchLoader.item) searchLoader.item.forceActiveFocus()
     }
   }
 
@@ -223,6 +222,7 @@ ThemeUi.Panel {
       Text {
         width: Math.max(0, itemRow.width - Commons.Style.space(26))
         text: menuItem.text
+        textFormat: Text.PlainText
         color: menuItem.foreground
         font.family: menuItem.fontFamily
         font.pixelSize: Commons.Style.font.body
@@ -305,6 +305,7 @@ ThemeUi.Panel {
           visible: root.errorText !== ""
           width: parent.width
           text: root.errorText
+          textFormat: Text.PlainText
           color: root.urgent
           font.family: root.fontFamily
           font.pixelSize: Commons.Style.font.caption
@@ -335,18 +336,23 @@ ThemeUi.Panel {
           onClicked: root.showMenu()
         }
 
-        ShellUi.TextField {
-          id: rimeSchemaSearch
+        Loader {
+          id: searchLoader
           width: parent.width
-          placeholderText: "搜索输入方案"
-          foreground: root.foreground
-          accent: Commons.Color.accent
-          font.family: root.fontFamily
-          readOnly: rimeSchemasProc.running
-          selectByMouse: true
-          Keys.onUpPressed: rimeSchemaList.decrementCurrentIndex()
-          Keys.onDownPressed: rimeSchemaList.incrementCurrentIndex()
-          onAccepted: root.selectRimeSchema(rimeSchemaList.currentIndex)
+          // On affected Qt Wayland builds a hidden text field can still read the clipboard.
+          active: root.opened && root.choosingRimeSchema
+
+          sourceComponent: ShellUi.TextField {
+            placeholderText: "搜索输入方案"
+            foreground: root.foreground
+            accent: Commons.Color.accent
+            font.family: root.fontFamily
+            readOnly: rimeSchemasProc.running
+            selectByMouse: true
+            Keys.onUpPressed: rimeSchemaList.decrementCurrentIndex()
+            Keys.onDownPressed: rimeSchemaList.incrementCurrentIndex()
+            onAccepted: root.selectRimeSchema(rimeSchemaList.currentIndex)
+          }
         }
 
         Text {
@@ -354,6 +360,7 @@ ThemeUi.Panel {
           width: parent.width
           text: rimeSchemasProc.running ? "正在读取输入方案…"
             : root.rimeSchemasError || (root.rimeSchemas.length ? "没有匹配的输入方案" : "没有可用的输入方案")
+          textFormat: Text.PlainText
           color: root.rimeSchemasError === "" ? root.foreground : root.urgent
           font.family: root.fontFamily
           font.pixelSize: Commons.Style.font.caption

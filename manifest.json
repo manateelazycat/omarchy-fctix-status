@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.manateelazycat.fcitx-status",
   "name": "Fcitx Status",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "Andy Stewart",
   "license": "GPL-3.0-only",
   "description": "Show the focused window's Fcitx5 mode and switch Rime schemas from the bar.",

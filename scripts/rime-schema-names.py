@@ -7,11 +7,16 @@ import sys
 
 try:
     import yaml
-except ModuleNotFoundError:
-    sys.exit("Fcitx Status: 读取 Rime 输入方案名称需要 python-yaml")
+except ModuleNotFoundError as error:
+    if error.name != "yaml":
+        raise
+    yaml = None
 
 
 def schema_name(schema_id, directories):
+    if yaml is None:
+        return schema_id
+
     filename = Path(f"{schema_id}.schema.yaml")
     if filename.name != str(filename):
         return schema_id

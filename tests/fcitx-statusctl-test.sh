@@ -156,6 +156,13 @@ assert_json "$schemas" '
   ]
 ' "only configured Rime schemas should be listed, with the active schema first"
 
+schemas="$(python3 -S "$PROJECT_DIR/scripts/rime-schema-names.py" rime_ice \
+  <<<'["double_pinyin_flypy","rime_ice"]')"
+assert_json "$schemas" '.current == "rime_ice" and .schemas == [
+  {id: "rime_ice", name: "rime_ice"},
+  {id: "double_pinyin_flypy", name: "double_pinyin_flypy"}
+]' "without PyYAML the picker should use schema IDs and keep the active one first"
+
 : >"$CALL_LOG"
 if "$CONTROLLER" set-rime-schema keyboard-us >/dev/null 2>&1; then
   fail "keyboard layout unexpectedly accepted as a Rime schema"
